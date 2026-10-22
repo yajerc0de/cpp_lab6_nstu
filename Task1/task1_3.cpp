@@ -2,8 +2,9 @@
 #include <vector>
 #include <cstdlib>
 #include <ctime>
-#include <conio.h>      // для _kbhit(), _getch()
-#include <windows.h>    // для Sleep()
+#include <string>
+#include <thread>
+#include <chrono>
 
 using namespace std;
 
@@ -45,62 +46,50 @@ public:
                 grid[i][j] = ((double)rand() / RAND_MAX) < density;
     }
 
+    void addPattern(const vector<string>& pattern, int topRow, int leftCol) {
+        for (int i = 0; i < (int)pattern.size(); ++i)
+            for (int j = 0; j < (int)pattern[i].size(); ++j)
+                if (pattern[i][j] == 'O') setCell(topRow + i, leftCol + j, true);
+    }
+
     // Фигуры
     void addGlider(int topRow, int leftCol) {
-        bool pattern[3][3] = { {0,1,0}, {0,0,1}, {1,1,1} };
-        for (int i = 0; i < 3; ++i)
-            for (int j = 0; j < 3; ++j)
-                if (pattern[i][j]) setCell(topRow + i, leftCol + j, true);
+        addPattern({ ".O.",
+                     "..O",
+                     "OOO" }, topRow, leftCol);
     }
 
     void addLWSS(int topRow, int leftCol) {
-        bool pattern[4][5] = {
-            {0,1,0,0,1},
-            {1,0,0,0,0},
-            {1,0,0,0,1},
-            {1,1,1,1,0}
-        };
-        for (int i = 0; i < 4; ++i)
-            for (int j = 0; j < 5; ++j)
-                if (pattern[i][j]) setCell(topRow + i, leftCol + j, true);
+        addPattern({ ".O..O",
+                     "O....",
+                     "O...O",
+                     "OOOO." }, topRow, leftCol);
     }
 
     void addMWSS(int topRow, int leftCol) {
-        bool pattern[4][5] = {
-            {0,0,1,0,1},
-            {1,0,0,0,0},
-            {1,0,0,0,1},
-            {1,1,1,1,0}
-        };
-        for (int i = 0; i < 4; ++i)
-            for (int j = 0; j < 5; ++j)
-                if (pattern[i][j]) setCell(topRow + i, leftCol + j, true);
+        addPattern({ "...O..",
+                     ".O...O",
+                     "O.....",
+                     "O....O",
+                     "OOOOO." }, topRow, leftCol);
     }
 
     void addHWSS(int topRow, int leftCol) {
-        bool pattern[4][5] = {
-            {0,0,0,1,1},
-            {1,0,0,0,0},
-            {1,0,0,0,1},
-            {1,1,1,1,0}
-        };
-        for (int i = 0; i < 4; ++i)
-            for (int j = 0; j < 5; ++j)
-                if (pattern[i][j]) setCell(topRow + i, leftCol + j, true);
+        addPattern({ "...OO..",
+                     ".O....O",
+                     "O......",
+                     "O.....O",
+                     "OOOOOO." }, topRow, leftCol);
     }
 
     void addQueenBeeShuttle(int topRow, int leftCol) {
-        bool pattern[13][5] = {
-            {0,0,0,0,0},{0,0,0,0,0},
-            {1,1,0,1,1},{1,1,0,1,1},
-            {0,0,0,0,0},{0,0,1,0,0},
-            {0,0,0,0,0},{0,0,1,0,0},
-            {0,0,0,0,0},{1,1,0,1,1},
-            {1,1,0,1,1},{0,0,0,0,0},{0,0,0,0,0}
-        };
-        for (int i = 0; i < 13; ++i)
-            for (int j = 0; j < 5; ++j)
-                if (pattern[i][j]) setCell(topRow + i, leftCol + j, true);
+        addPattern({ ".........O............",
+                     ".......O.O............",
+                     "......O.O.............",
+                     "OO...O..O...........OO",
+                     "OO....O.O...........OO",
+                     ".......O.O............",
+                     ".........O............" }, topRow, leftCol);
     }
 
     void step() {
@@ -139,33 +128,21 @@ public:
     }
 
     static void clearScreen() {
+#ifdef _WIN32
         system("cls");
+#else
+        cout << "\033[2J\033[H";
+#endif
     }
 
-    void run(int delayMs = 100) {
-        int gen = 0;
-        bool running = true;
-        while (running) {
+    void run(int generations, int delayMs) {
+        for (int gen = 0; gen <= generations; ++gen) {
             clearScreen();
-            cout << "Поколение " << gen
+            cout << "Поколение " << gen << " из " << generations
                  << " | Правила: " << (classicRules ? "классические" : "оригинальные") << "\n";
             display();
-            cout << "\nНажмите 'q' для выхода, 's' для паузы/продолжения\n";
-
-            if (_kbhit()) {
-                char ch = _getch();
-                if (ch == 'q') running = false;
-                else if (ch == 's') {
-                    cout << "Пауза. Нажмите любую клавишу для продолжения...\n";
-                    _getch();
-                }
-            }
-
-            if (running) {
-                step();
-                gen++;
-                Sleep(delayMs);
-            }
+            step();
+            this_thread::sleep_for(chrono::milliseconds(delayMs));
         }
     }
 };
@@ -199,7 +176,12 @@ int main() {
         default: game.addGlider(5, 10);
     }
 
-    game.run(100);
+    cout << "\nСколько поколений показать: ";
+    int generations;
+    cin >> generations;
+    if (generations < 1) generations = 100;
+
+    game.run(generations, 100);
 
     return 0;
 }

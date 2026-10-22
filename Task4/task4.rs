@@ -66,7 +66,12 @@ fn main() {
             .split_whitespace()
             .map(|x| x.parse().unwrap())
             .collect();
-        (dims[0], dims[1])
+        if dims.len() < 2 || dims[0] < 2 || dims[1] < 1 || dims[0] * dims[1] > 22 {
+            println!("Некорректный размер, используется доска 4 x 3.");
+            (4, 3)
+        } else {
+            (dims[0], dims[1])
+        }
     };
 
     let total_bits = rows * cols;

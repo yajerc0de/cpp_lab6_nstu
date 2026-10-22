@@ -15,9 +15,9 @@ const int SIZE = 4;
 // Вывод вектора
 void printVector(const vector<double>& vec, const string& name) {
     cout << name << ": [";
-    for (int i = 0; i < vec.size(); ++i) {
+    for (int i = 0; i < SIZE; ++i) {
         cout << setw(9) << fixed << setprecision(6) << vec[i];
-        if (i < vec.size() - 1) cout << ", ";
+        if (i < SIZE - 1) cout << ", ";
     }
     cout << " ]\n";
 }
@@ -158,8 +158,31 @@ int main() {
 
     // Прямой метод (LU)
     solveLU(A, b);
+    // Равносильная система с диагональным преобладанием для метода Зейделя:
+    // 1-е уравнение = 4-е - 1-е - 2-е, 2-е и 3-е без изменений, 4-е = исходное 1-е
+    vector<vector<double>> A2(SIZE, vector<double>(SIZE));
+    vector<double> b2(SIZE);
+    for (int j = 0; j < SIZE; ++j) {
+        A2[0][j] = A[3][j] - A[0][j] - A[1][j];
+        A2[1][j] = A[1][j];
+        A2[2][j] = A[2][j];
+        A2[3][j] = A[0][j];
+    }
+    b2[0] = b[3] - b[0] - b[1];
+    b2[1] = b[1];
+    b2[2] = b[2];
+    b2[3] = b[0];
+
+    cout << "\nСистема, приведённая к виду с диагональным преобладанием:\n";
+    for (int i = 0; i < SIZE; ++i) {
+        for (int j = 0; j < SIZE; ++j)
+            cout << setw(8) << fixed << setprecision(2) << A2[i][j] << " * x" << j + 1 << (j < SIZE - 1 ? " +" : "");
+        cout << " = " << b2[i] << "\n";
+    }
+    cout << setprecision(6);
+
     // Приближённый метод (Зейдель)
-    solveZeidel(A, b);
+    solveZeidel(A2, b2);
 
     return 0;
 }
